@@ -24,12 +24,13 @@ def standardize_date_city(flights, weather):
 # Current implementation doesn't take time into account!!!
 def perform_merge(flights, weather):
     weather["date"] = weather["Date_Time"].dt.date
+    weather["hour"] = weather["Date_Time"].dt.hour
     flights["date"] = flights["fl_date"].dt.date
-    weather = weather.groupby(["Location", "date"]).first().reset_index()
+    weather = weather.groupby(["Location", "date", "hour"]).first().reset_index()
     merged = flights.merge(
         weather,
-        left_on = ["origin_city", "date",],
-        right_on = ["Location",    "date",],
+        left_on = ["origin_city", "date","Departure_Hour"],
+        right_on = ["Location",    "date","hour"],
         how= "inner"
     )
 
