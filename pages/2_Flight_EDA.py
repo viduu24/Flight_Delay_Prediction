@@ -1,61 +1,17 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-import requests
-from io import BytesIO
-from bs4 import BeautifulSoup
+from utils import load_merged
 
 st.set_page_config(page_title="Flight EDA", page_icon="✈️", layout="wide")
 
-# ── Google Drive downloader (handles virus-scan warning) ─────────────────────
-def download_gdrive_csv(file_id: str) -> pd.DataFrame | None:
-    session = requests.Session()
+# Reuses the cached result from App.py — no re-download
+df = load_merged()
 
-    # Step 1: initial request
-    url = f"https://drive.google.com/uc?export=download&id={file_id}"
-    response = session.get(url, stream=True)
-
-    # Step 2: if Google returns the virus-scan HTML warning, parse the real download URL
-    content_type = response.headers.get("Content-Type", "")
-    if "text/html" in content_type:
-        soup = BeautifulSoup(response.text, "html.parser")
-        form = soup.find("form", {"id": "download-form"})
-        if form:
-            action = form.get("action")
-            params = {inp.get("name"): inp.get("value")
-                      for inp in form.find_all("input")
-                      if inp.get("name")}
-            response = session.get(action, params=params, stream=True)
-        else:
-            # Fallback: try usercontent URL directly
-            response = session.get(
-                "https://drive.usercontent.google.com/download",
-                params={"id": file_id, "export": "download", "confirm": "t"},
-                stream=True,
-            )
-
-    response.raise_for_status()
-    return pd.read_csv(BytesIO(response.content), low_memory=False)
-
-@st.cache_data(show_spinner="Loading dataset...")
-def load_data():
-    FILE_ID = "1hgMTsjDw8uyi3MZQkrQ6TI11j3YIEPzA"
-    try:
-        return download_gdrive_csv(FILE_ID)
-    except Exception as e:
-        st.error(f"❌ Google Drive download failed: {e}")
-        return None
-
-df = load_data()
-
-# ── Validate ──────────────────────────────────────────────────────────────────
 if df is None:
     st.error("❌ Dataset could not be loaded.")
     st.stop()
-
-df.columns = df.columns.str.strip().str.lower()
 
 required = ["is_delay", "delay_in_minutes"]
 missing  = [c for c in required if c not in df.columns]
@@ -64,7 +20,6 @@ if missing:
     st.write("Available:", df.columns.tolist())
     st.stop()
 
-# ── Safe column references ────────────────────────────────────────────────────
 col_delay   = "is_delay"
 col_minutes = "delay_in_minutes"
 col_hour    = "departure_hour" if "departure_hour" in df.columns else None
@@ -97,18 +52,20 @@ with col1:
     fig = px.pie(names=["Not Delayed", "Delayed"],
                  values=[total - delayed, delayed],
                  title="Delay Distribution")
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 with col2:
     sample = df[col_minutes].dropna().clip(-60, 300)
+    if len(sample) > 100_000:
+        sample = sample.sample(100_000, random_state=42)
     fig = px.histogram(sample, nbins=60, title="Delay Minutes Distribution")
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 # ── Hourly pattern ────────────────────────────────────────────────────────────
 if col_hour:
     hourly = df.groupby(col_hour)[col_delay].mean().reset_index()
     fig = px.line(hourly, x=col_hour, y=col_delay, title="Delay Rate by Hour")
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 # ── Airline performance ───────────────────────────────────────────────────────
 if "op_unique_carrier" in df.columns:
@@ -121,7 +78,7 @@ if "op_unique_carrier" in df.columns:
     fig = px.bar(airline.sort_values("delay_rate"),
                  x="delay_rate", y="op_unique_carrier",
                  orientation="h", title="Airline Delay Rates")
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 # ── Delay reasons ─────────────────────────────────────────────────────────────
 delay_cols = ["carrier_delay","weather_delay","nas_delay","security_delay","late_aircraft_delay"]
@@ -130,4 +87,4 @@ if existing:
     reason = df[existing].sum().reset_index()
     reason.columns = ["reason", "minutes"]
     fig = px.bar(reason, x="minutes", y="reason", orientation="h", title="Delay Causes")
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
