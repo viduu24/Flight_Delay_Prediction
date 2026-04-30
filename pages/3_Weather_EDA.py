@@ -5,6 +5,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import requests
 from io import BytesIO
+from bs4 import BeautifulSoup
 
 st.set_page_config(page_title="Weather EDA", page_icon="🌦️", layout="wide")
 
@@ -42,21 +43,36 @@ PLOTLY_LAYOUT = dict(
     yaxis=dict(gridcolor="#1e2d4a", linecolor="#1e2d4a"),
 )
 
-# ── Load from Google Drive ────────────────────────────────────────────────────
 MERGED_ID = "1hgMTsjDw8uyi3MZQkrQ6TI11j3YIEPzA"
+
+# ── Robust Google Drive downloader ───────────────────────────────────────────
+def download_gdrive_csv(file_id: str) -> pd.DataFrame | None:
+    session  = requests.Session()
+    url      = f"https://drive.google.com/uc?export=download&id={file_id}"
+    response = session.get(url, stream=True)
+
+    if "text/html" in response.headers.get("Content-Type", ""):
+        soup = BeautifulSoup(response.text, "html.parser")
+        form = soup.find("form", {"id": "download-form"})
+        if form:
+            action = form.get("action")
+            params = {inp.get("name"): inp.get("value")
+                      for inp in form.find_all("input") if inp.get("name")}
+            response = session.get(action, params=params, stream=True)
+        else:
+            response = session.get(
+                "https://drive.usercontent.google.com/download",
+                params={"id": file_id, "export": "download", "confirm": "t"},
+                stream=True,
+            )
+
+    response.raise_for_status()
+    return pd.read_csv(BytesIO(response.content), low_memory=False)
 
 @st.cache_data(show_spinner="Loading merged dataset…")
 def load_data():
-    URL = "https://drive.google.com/uc?export=download"
-    session = requests.Session()
-    response = session.get(URL, params={"id": MERGED_ID}, stream=True)
-    for key, value in response.cookies.items():
-        if key.startswith("download_warning"):
-            response = session.get(URL, params={"id": MERGED_ID, "confirm": value}, stream=True)
-            break
     try:
-        response.raise_for_status()
-        return pd.read_csv(BytesIO(response.content), low_memory=False)
+        return download_gdrive_csv(MERGED_ID)
     except Exception as e:
         st.error(f"❌ Failed to load merged dataset: {e}")
         return None
@@ -70,7 +86,6 @@ if df is None:
     st.error("❌ Dataset could not be loaded from Google Drive.")
     st.stop()
 
-# Ensure numeric
 for col in ["IS_Delay","weather_delay","Temperature_C","Humidity_pct","Precipitation_mm","Wind_Speed_kmh"]:
     if col in df.columns:
         df[col] = pd.to_numeric(df[col], errors="coerce")
@@ -81,17 +96,17 @@ st.divider()
 
 # ── KPIs ──────────────────────────────────────────────────────────────────────
 if "weather_delay" in df.columns and "IS_Delay" in df.columns:
-    total = len(df)
-    delayed = int(df["IS_Delay"].fillna(0).sum())
+    total      = len(df)
+    delayed    = int(df["IS_Delay"].fillna(0).sum())
     wx_delayed = int((df["weather_delay"].fillna(0) > 0).sum())
-    coverage = (df["Weather_Data_Present"] == "Yes").sum() if "Weather_Data_Present" in df.columns else None
+    coverage   = (df["Weather_Data_Present"] == "Yes").sum() if "Weather_Data_Present" in df.columns else None
     avg_wx_min = df[df["weather_delay"] > 0]["weather_delay"].mean()
 
     c1, c2, c3, c4 = st.columns(4)
     cards = [
-        (f"{wx_delayed:,}", "Weather-Caused Delays"),
+        (f"{wx_delayed:,}",                              "Weather-Caused Delays"),
         (f"{wx_delayed/delayed:.1%}" if delayed else "N/A", "% of Delayed Flights"),
-        (f"{avg_wx_min:.1f} min", "Avg Weather Delay (when > 0)"),
+        (f"{avg_wx_min:.1f} min",                        "Avg Weather Delay (when > 0)"),
         (f"{coverage/total:.1%}" if coverage else "N/A", "Flights with Sensor Data"),
     ]
     for col_ui, (val, lbl) in zip([c1, c2, c3, c4], cards):
@@ -103,8 +118,8 @@ if "weather_delay" in df.columns and "IS_Delay" in df.columns:
 st.markdown("### 1 · How Many Delayed Flights Were Weather-Caused?")
 
 if "weather_delay" in df.columns and "IS_Delay" in df.columns:
-    not_delayed = total - delayed
-    wx_d = int((df["weather_delay"].fillna(0) > 0).sum())
+    not_delayed   = total - delayed
+    wx_d          = int((df["weather_delay"].fillna(0) > 0).sum())
     delayed_no_wx = delayed - wx_d
 
     col1, col2 = st.columns(2)
@@ -126,13 +141,11 @@ if "weather_delay" in df.columns and "IS_Delay" in df.columns:
                 .agg(total_flights=("IS_Delay", "count"),
                      total_delayed=("IS_Delay", "sum"),
                      wx_delayed=("weather_delay", lambda x: (x > 0).sum()))
-                .reindex(season_order)
-                .reset_index()
+                .reindex(season_order).reset_index()
             )
             seas["wx_pct_of_delayed"] = seas["wx_delayed"] / seas["total_delayed"] * 100
-            fig = px.bar(seas, x="Season", y="wx_pct_of_delayed",
-                         color="Season",
-                         color_discrete_sequence=["#60a5fa", "#4ade80", "#fbbf24", "#f97316"],
+            fig = px.bar(seas, x="Season", y="wx_pct_of_delayed", color="Season",
+                         color_discrete_sequence=["#60a5fa","#4ade80","#fbbf24","#f97316"],
                          title="Weather Delay % of All Delays by Season",
                          labels={"wx_pct_of_delayed": "% of Delayed Flights"})
             fig.update_layout(**PLOTLY_LAYOUT, showlegend=False)
@@ -142,13 +155,13 @@ if "weather_delay" in df.columns and "IS_Delay" in df.columns:
 st.markdown("### 2 · Sensor Conditions: Weather-Caused vs Non-Weather Delays")
 
 if has_weather_cols and "weather_delay" in df.columns and "IS_Delay" in df.columns:
-    delayed_df = df[df["IS_Delay"] == 1].copy()
+    delayed_df  = df[df["IS_Delay"] == 1].copy()
     wx_group    = delayed_df[delayed_df["weather_delay"] > 0]
     no_wx_group = delayed_df[delayed_df["weather_delay"] == 0]
 
-    weather_vars = ["Temperature_C", "Humidity_pct", "Precipitation_mm", "Wind_Speed_kmh"]
-    var_labels   = {"Temperature_C": "Temperature (°C)", "Humidity_pct": "Humidity (%)",
-                    "Precipitation_mm": "Precipitation (mm)", "Wind_Speed_kmh": "Wind Speed (km/h)"}
+    weather_vars = ["Temperature_C","Humidity_pct","Precipitation_mm","Wind_Speed_kmh"]
+    var_labels   = {"Temperature_C":"Temperature (°C)","Humidity_pct":"Humidity (%)",
+                    "Precipitation_mm":"Precipitation (mm)","Wind_Speed_kmh":"Wind Speed (km/h)"}
 
     tabs = st.tabs([var_labels[v] for v in weather_vars])
     for tab, var in zip(tabs, weather_vars):
@@ -160,22 +173,21 @@ if has_weather_cols and "weather_delay" in df.columns and "IS_Delay" in df.colum
                                        marker_color="#FF6B6B", opacity=0.6, nbinsx=40))
             fig.update_layout(barmode="overlay",
                               title=f"{var_labels[var]}: Weather-Caused vs Other Delays",
-                              **PLOTLY_LAYOUT,
-                              xaxis_title=var_labels[var], yaxis_title="Count")
+                              **PLOTLY_LAYOUT, xaxis_title=var_labels[var], yaxis_title="Count")
             st.plotly_chart(fig, use_container_width=True)
 
-    st.markdown('<div class="insight-box">Higher precipitation and wind speed are associated with weather-caused delays. Temperature alone is a weaker predictor — very cold and very warm temperatures both correlate with higher delay rates through different mechanisms (ice/snow vs. thunderstorms).</div>', unsafe_allow_html=True)
+    st.markdown('<div class="insight-box">Higher precipitation and wind speed are associated with weather-caused delays. Temperature alone is a weaker predictor — very cold and very warm temperatures both correlate with higher delay rates through different mechanisms.</div>', unsafe_allow_html=True)
 
 # ── Section 3 ─────────────────────────────────────────────────────────────────
 st.markdown("### 3 · Average Weather Conditions — Delayed vs Not Delayed")
 
 if has_weather_cols and "IS_Delay" in df.columns:
-    avg_cond = df.groupby("IS_Delay")[["Temperature_C", "Humidity_pct", "Precipitation_mm", "Wind_Speed_kmh"]].mean()
-    avg_cond.index = avg_cond.index.map({0: "Not Delayed", 1: "Delayed"})
+    avg_cond = df.groupby("IS_Delay")[["Temperature_C","Humidity_pct","Precipitation_mm","Wind_Speed_kmh"]].mean()
+    avg_cond.index = avg_cond.index.map({0:"Not Delayed", 1:"Delayed"})
     avg_melt = avg_cond.reset_index().melt(id_vars="IS_Delay", var_name="Metric", value_name="Average")
 
     fig = px.bar(avg_melt, x="Metric", y="Average", color="IS_Delay", barmode="group",
-                 color_discrete_map={"Not Delayed": "#0F4C81", "Delayed": "#FF6B6B"},
+                 color_discrete_map={"Not Delayed":"#0F4C81","Delayed":"#FF6B6B"},
                  title="Avg Weather Conditions: Delayed vs Not Delayed")
     fig.update_layout(**PLOTLY_LAYOUT)
     st.plotly_chart(fig, use_container_width=True)
@@ -184,7 +196,7 @@ if has_weather_cols and "IS_Delay" in df.columns:
 st.markdown("### 4 · Correlation: Weather Variables vs IS_Delay")
 
 if has_weather_cols and "IS_Delay" in df.columns:
-    corr_cols = ["Temperature_C", "Humidity_pct", "Precipitation_mm", "Wind_Speed_kmh", "IS_Delay"]
+    corr_cols = ["Temperature_C","Humidity_pct","Precipitation_mm","Wind_Speed_kmh","IS_Delay"]
     corr = df[corr_cols].corr()
 
     fig = px.imshow(corr, color_continuous_scale="RdBu_r", zmin=-1, zmax=1,
@@ -192,7 +204,7 @@ if has_weather_cols and "IS_Delay" in df.columns:
     fig.update_layout(**PLOTLY_LAYOUT)
     st.plotly_chart(fig, use_container_width=True)
 
-    st.markdown('<div class="insight-box">Precipitation_mm shows the strongest positive correlation with IS_Delay among the weather sensor variables. The correlations are modest overall — weather is one contributor among several, which is why the model combines weather with flight-operations features.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="insight-box">Precipitation_mm shows the strongest positive correlation with IS_Delay. Correlations are modest overall — weather is one contributor among several.</div>', unsafe_allow_html=True)
 
 # ── Section 5 ─────────────────────────────────────────────────────────────────
 st.markdown("### 5 · Monthly Weather Delay Trend")
@@ -202,12 +214,12 @@ if "month" in df.columns and "weather_delay" in df.columns:
                  7:"Jul",8:"Aug",9:"Sep",10:"Oct",11:"Nov",12:"Dec"}
     monthly = (
         df.groupby("month")
-        .agg(total=("IS_Delay", "count"),
+        .agg(total=("IS_Delay","count"),
              wx_delayed=("weather_delay", lambda x: (x > 0).sum()))
         .reset_index()
     )
-    monthly["wx_pct"]      = monthly["wx_delayed"] / monthly["total"] * 100
-    monthly["month_name"]  = monthly["month"].map(month_map)
+    monthly["wx_pct"]     = monthly["wx_delayed"] / monthly["total"] * 100
+    monthly["month_name"] = monthly["month"].map(month_map)
 
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=monthly["month_name"], y=monthly["wx_pct"],
