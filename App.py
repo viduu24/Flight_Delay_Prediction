@@ -3,7 +3,7 @@ from utils import load_flights, load_weather, load_merged
 
 st.set_page_config(
     page_title="Flight Delay Prediction",
-    page_icon="✈️",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -25,34 +25,34 @@ flights = load_flights()
 weather = load_weather()
 merged  = load_merged()
 
-st.subheader("📊 Data Status")
+st.subheader("Data Status")
 c1, c2, c3 = st.columns(3)
-c1.metric("Flights", "Loaded ✅" if flights is not None else "Failed ❌")
-c2.metric("Weather", "Loaded ✅" if weather is not None else "Failed ❌")
-c3.metric("Merged",  "Loaded ✅" if merged  is not None else "Failed ❌")
+c1.metric("Flights", "Loaded" if flights is not None else "Failed ❌")
+c2.metric("Weather", "Loaded" if weather is not None else "Failed ❌")
+c3.metric("Merged",  "Loaded" if merged  is not None else "Failed ❌")
 st.divider()
 
 if flights is not None:
-    st.subheader("✈️ Flights Sample")
+    st.subheader("Flights Sample")
     st.dataframe(flights.head(), width="stretch")
 
 if weather is not None:
-    st.subheader("🌦️ Weather Sample")
+    st.subheader("Weather Sample")
     st.dataframe(weather.head(), width="stretch")
 
 if merged is not None:
-    st.subheader("🔗 Merged Sample")
+    st.subheader("Merged Sample")
     st.dataframe(merged.head(), width="stretch")
 
 st.divider()
 st.info("""
 Use the sidebar to navigate:
 
-• 📦 Dataset Overview  
-• ✈️ Flight EDA  
-• 🌦️ Weather EDA  
-• 🤖 Models  
-• 🔮 Prediction  
+• Dataset Overview  
+• Flight EDA  
+• Weather EDA  
+• Models  
+• Prediction  
 
 All data is loaded from Google Drive.
 """)
