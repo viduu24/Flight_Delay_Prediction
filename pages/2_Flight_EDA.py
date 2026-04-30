@@ -12,28 +12,35 @@ st.set_page_config(page_title="Flight EDA", page_icon="✈️", layout="wide")
 # ── Load Data ─────────────────────────────────────────────
 @st.cache_data(show_spinner="Loading dataset...")
 def load_data():
-    here = Path(__file__).resolve().parent.parent
+    import requests
+    from io import BytesIO
 
-    candidates = [
-        here / "Merged_Data" / "merged_flights.csv",
-        here.parent / "Merged_Data" / "merged_flights.csv",
-        Path("Merged_Data/merged_flights.csv"),
-        Path("merged_flights.csv"),
-    ]
+    FILE_ID = "1hgMTsjDw8uyi3MZQkrQ6TI11j3YIEPzA"
 
-    for p in candidates:
-        if p.exists():
-            return pd.read_csv(p, low_memory=False)
+    def download_from_gdrive(file_id):
+        URL = "https://drive.google.com/uc?export=download"
+        session = requests.Session()
 
-    # Google Drive fallback
+        response = session.get(URL, params={"id": file_id}, stream=True)
+
+        # Handle large file warning
+        for key, value in response.cookies.items():
+            if key.startswith("download_warning"):
+                params = {"id": file_id, "confirm": value}
+                response = session.get(URL, params=params, stream=True)
+                break
+
+        return response
+
     try:
-        url = "https://drive.google.com/uc?export=download&id=1hgMTsjDw8uyi3MZQkrQ6TI11j3YIEPzA"
-        res = requests.get(url)
+        res = download_from_gdrive(FILE_ID)
         res.raise_for_status()
-        return pd.read_csv(StringIO(res.text), low_memory=False)
-    except:
-        return None
 
+        return pd.read_csv(BytesIO(res.content), low_memory=False)
+
+    except Exception as e:
+        st.error(f"❌ Google Drive download failed: {e}")
+        return None
 df = load_data()
 
 # ── Validate ─────────────────────────────────────────────
