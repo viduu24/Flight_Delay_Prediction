@@ -43,21 +43,39 @@ PLOTLY_LAYOUT = dict(
     yaxis=dict(gridcolor="#1e2d4a", linecolor="#1e2d4a"),
 )
 
-# ── Load Data ─────────────────────────────────────────────────────────────────
 @st.cache_data(show_spinner="Loading merged dataset…")
 def load_data():
-    # __file__ is .../pages/2_...py  →  parent = pages/  →  parent.parent = repo root
-    here = Path(__file__).resolve().parent.parent  # repo root
+    import requests
+    from io import StringIO
+
+    # ✅ Step 1: Try LOCAL paths (your original logic)
+    here = Path(__file__).resolve().parent.parent
+
     candidates = [
-        here / "Merged_Data" / "merged_flights.csv",          # root/Merged_Data/
-        here.parent / "Merged_Data" / "merged_flights.csv",   # one level above root
-        Path("Merged_Data/merged_flights.csv"),                # cwd fallback
-        Path("merged_flights.csv"),                            # cwd fallback
+        here / "Merged_Data" / "merged_flights.csv",
+        here.parent / "Merged_Data" / "merged_flights.csv",
+        Path("Merged_Data/merged_flights.csv"),
+        Path("merged_flights.csv"),
     ]
+
     for p in candidates:
         if p.exists():
+            st.success(f"Loaded local dataset: {p}")
             return pd.read_csv(p, low_memory=False)
-    return None
+
+    # ✅ Step 2: FALLBACK → Google Drive
+    try:
+        GDRIVE_URL = "https://drive.google.com/uc?export=download&id=1hgMTsjDw8uyi3MZQkrQ6TI11j3YIEPzA"
+
+        response = requests.get(GDRIVE_URL)
+        response.raise_for_status()
+
+        st.warning("⚠️ Using Google Drive dataset (deployment mode)")
+        return pd.read_csv(StringIO(response.text), low_memory=False)
+
+    except Exception as e:
+        st.error(f"❌ Failed to load dataset from both local and Google Drive: {e}")
+        return None
 
 df = load_data()
 
