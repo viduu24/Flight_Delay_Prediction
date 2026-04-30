@@ -46,12 +46,13 @@ PLOTLY_LAYOUT = dict(
 # ── Load Data ─────────────────────────────────────────────────────────────────
 @st.cache_data(show_spinner="Loading merged dataset…")
 def load_data():
-    # Search common relative paths
+    # __file__ is .../pages/2_...py  →  parent = pages/  →  parent.parent = repo root
+    here = Path(__file__).resolve().parent.parent  # repo root
     candidates = [
-        Path("../../Merged_Data/merged_flights.csv"),
-        Path("../Merged_Data/merged_flights.csv"),
-        Path("Merged_Data/merged_flights.csv"),
-        Path("merged_flights.csv"),
+        here / "Merged_Data" / "merged_flights.csv",          # root/Merged_Data/
+        here.parent / "Merged_Data" / "merged_flights.csv",   # one level above root
+        Path("Merged_Data/merged_flights.csv"),                # cwd fallback
+        Path("merged_flights.csv"),                            # cwd fallback
     ]
     for p in candidates:
         if p.exists():
@@ -64,8 +65,22 @@ st.markdown('<div class="section-header">✈️ Flight EDA</div>', unsafe_allow_
 st.markdown("Exploratory analysis of flight operations — delay rates, severity, airline rankings, time patterns, and route concentration.")
 
 if df is None:
-    st.warning("⚠️ **merged_flights.csv not found.** Place it at `../../Merged_Data/merged_flights.csv` relative to this page, or adjust the path in `load_data()`. The charts below will populate once the file is available.")
-    st.info("Expected columns: `IS_Delay`, `delay_in_minutes`, `Departure_Hour`, `month`, `day_of_week`, `Season`, `op_unique_carrier`, `origin_city`, `dest_city`, `carrier_delay`, `weather_delay`, `nas_delay`, `security_delay`, `late_aircraft_delay`")
+    st.warning("⚠️ **merged_flights.csv not found.** Charts will populate once the file is available.")
+    here = Path(__file__).resolve().parent.parent
+    with st.expander("🔍 Debug — paths checked"):
+        st.code(f"""
+Script location : {Path(__file__).resolve()}
+Repo root guess : {here}
+
+Paths checked:
+  1. {here / 'Merged_Data' / 'merged_flights.csv'}
+  2. {here.parent / 'Merged_Data' / 'merged_flights.csv'}
+  3. {Path('Merged_Data/merged_flights.csv').resolve()}
+  4. {Path('merged_flights.csv').resolve()}
+
+Current working directory: {Path.cwd()}
+        """)
+        st.info("Place **merged_flights.csv** in the `Merged_Data/` folder at the repo root, then reload the page.")
     st.stop()
 
 # ── Prep ──────────────────────────────────────────────────────────────────────
