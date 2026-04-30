@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 import pickle
 import requests
-from io import BytesIO
 
 st.set_page_config(page_title="Predict a Flight", page_icon="🔮", layout="wide")
 
@@ -48,47 +47,32 @@ st.markdown("""
         background: linear-gradient(135deg, #1d4ed8, #4338ca);
         color: white; border: none; border-radius: 12px;
         padding: 0.7rem 2rem; font-size: 1rem; font-weight: 600;
-        font-family: 'Space Grotesk', sans-serif; cursor: pointer;
         width: 100%; margin-top: 0.5rem; transition: all 0.2s;
     }
     .stButton > button:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(99,102,241,0.4); }
 </style>
 """, unsafe_allow_html=True)
 
-# ── Google Drive model file IDs ───────────────────────────────────────────────
-# IMPORTANT: Replace these with your actual Google Drive file IDs for the .pkl files
-# Share the files as "Anyone with the link can view", then paste the IDs below
-BAGGING_MODEL_ID = "YOUR_BAGGING_MODEL_FILE_ID"   # <-- replace this
-KNN_MODEL_ID     = "YOUR_KNN_MODEL_FILE_ID"        # <-- replace this
-
-def download_pkl_from_gdrive(file_id: str):
-    """Download a pickle file from Google Drive and return the loaded object."""
-    URL = "https://drive.google.com/uc?export=download"
-    session = requests.Session()
-    response = session.get(URL, params={"id": file_id}, stream=True)
-    for key, value in response.cookies.items():
-        if key.startswith("download_warning"):
-            response = session.get(URL, params={"id": file_id, "confirm": value}, stream=True)
-            break
-    response.raise_for_status()
-    return pickle.loads(response.content)
+# ── GitHub raw URLs for models ────────────────────────────────────────────────
+BAGGING_URL = "https://raw.githubusercontent.com/viduu24/Flight_Delay_Prediction/main/Code/Models/bagging_model.pkl"
+KNN_URL     = "https://raw.githubusercontent.com/viduu24/Flight_Delay_Prediction/main/Code/Models/knn_model.pkl"
 
 @st.cache_resource(show_spinner="Loading Bagging model…")
 def load_bagging():
-    if BAGGING_MODEL_ID == "YOUR_BAGGING_MODEL_FILE_ID":
-        return None
     try:
-        return download_pkl_from_gdrive(BAGGING_MODEL_ID)
+        r = requests.get(BAGGING_URL, timeout=30)
+        r.raise_for_status()
+        return pickle.loads(r.content)
     except Exception as e:
         st.warning(f"Could not load Bagging model: {e}")
         return None
 
 @st.cache_resource(show_spinner="Loading KNN model…")
 def load_knn():
-    if KNN_MODEL_ID == "YOUR_KNN_MODEL_FILE_ID":
-        return None
     try:
-        return download_pkl_from_gdrive(KNN_MODEL_ID)
+        r = requests.get(KNN_URL, timeout=30)
+        r.raise_for_status()
+        return pickle.loads(r.content)
     except Exception as e:
         st.warning(f"Could not load KNN model: {e}")
         return None
@@ -113,7 +97,6 @@ STATES = ["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Conne
           "North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island",
           "South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont",
           "Virginia","Washington","West Virginia","Wisconsin","Wyoming"]
-
 MAJOR_CITIES = [
     "New York","Los Angeles","Chicago","Dallas","Houston","Atlanta","Miami",
     "Phoenix","Philadelphia","Denver","Boston","Seattle","Minneapolis","Detroit",
@@ -122,7 +105,6 @@ MAJOR_CITIES = [
     "Raleigh","Indianapolis","Nashville","Austin","Kansas City","Memphis",
     "Milwaukee","Albuquerque","Tucson","Fresno","Mesa","Omaha","Honolulu",
 ]
-
 SEASON_MAP = {12:"Winter",1:"Winter",2:"Winter",3:"Spring",4:"Spring",5:"Spring",
               6:"Summer",7:"Summer",8:"Summer",9:"Fall",10:"Fall",11:"Fall"}
 
@@ -147,12 +129,6 @@ def build_bagging_features(month, day_of_month, day_of_week, carrier, origin_cit
 def build_knn_features(month, day_of_month, day_of_week, carrier, origin_city,
                         origin_state, dep_time_int, departure_hour, precipitation):
     season = SEASON_MAP.get(month, "Spring")
-    hour_sin  = np.sin(2 * np.pi * departure_hour / 24)
-    hour_cos  = np.cos(2 * np.pi * departure_hour / 24)
-    month_sin = np.sin(2 * np.pi * month / 12)
-    month_cos = np.cos(2 * np.pi * month / 12)
-    dow_sin   = np.sin(2 * np.pi * day_of_week / 7)
-    dow_cos   = np.cos(2 * np.pi * day_of_week / 7)
     return pd.DataFrame([{
         "month": month, "day_of_month": day_of_month, "day_of_week": day_of_week,
         "op_unique_carrier": get_le_encode(carrier, CARRIERS),
@@ -162,21 +138,20 @@ def build_knn_features(month, day_of_month, day_of_week, carrier, origin_city,
         "dep_time":          dep_time_int,
         "Season":            get_le_encode(season, ["Fall","Spring","Summer","Winter"]),
         "Departure_Hour":    departure_hour,
-        "hour_sin": hour_sin, "hour_cos": hour_cos,
-        "month_sin": month_sin, "month_cos": month_cos,
-        "dow_sin": dow_sin, "dow_cos": dow_cos,
+        "hour_sin":  np.sin(2 * np.pi * departure_hour / 24),
+        "hour_cos":  np.cos(2 * np.pi * departure_hour / 24),
+        "month_sin": np.sin(2 * np.pi * month / 12),
+        "month_cos": np.cos(2 * np.pi * month / 12),
+        "dow_sin":   np.sin(2 * np.pi * day_of_week / 7),
+        "dow_cos":   np.cos(2 * np.pi * day_of_week / 7),
     }])
 
 # ── UI ────────────────────────────────────────────────────────────────────────
 st.markdown('<div class="section-header">🔮 Predict a Flight</div>', unsafe_allow_html=True)
-st.markdown("Enter your flight details below to get a delay probability prediction from the saved models.")
+st.markdown("Enter your flight details below to get a delay probability prediction.")
 
-model_available = bagging_model is not None or knn_model is not None
-if not model_available:
-    st.warning("""
-    ⚠️ **No models loaded.** Running in **Demo Mode** (heuristic).  
-    To enable real predictions, add your Google Drive file IDs to `BAGGING_MODEL_ID` and `KNN_MODEL_ID` at the top of this file.
-    """)
+if bagging_model is None and knn_model is None:
+    st.warning("⚠️ Models could not be loaded from GitHub. Running in Demo Mode.")
 
 st.divider()
 
@@ -192,17 +167,16 @@ with col_form:
 
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown('<div class="form-section"><h4>🗓️ Date & Time</h4>', unsafe_allow_html=True)
-
     col1, col2, col3 = st.columns(3)
     with col1:
         month = st.selectbox("Month", list(range(1, 13)),
-                             format_func=lambda m: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m-1])
+                             format_func=lambda m: ["Jan","Feb","Mar","Apr","May","Jun",
+                                                    "Jul","Aug","Sep","Oct","Nov","Dec"][m-1])
     with col2:
         day_of_month = st.number_input("Day", min_value=1, max_value=31, value=15)
     with col3:
         day_of_week = st.selectbox("Day of Week", list(range(1, 8)),
                                    format_func=lambda d: ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"][d-1])
-
     departure_hour = st.slider("Departure Hour (0–23)", 0, 23, 9)
     dep_time_int = departure_hour * 100
     st.markdown("</div>", unsafe_allow_html=True)
@@ -240,7 +214,6 @@ with col_result:
     if predict_btn:
         prob_delay = None
         model_used = ""
-
         try:
             if selected_model == "Bagged Decision Trees" and bagging_model:
                 X = build_bagging_features(month, day_of_month, day_of_week, carrier,
@@ -257,7 +230,6 @@ with col_result:
                 model_used = "KNN (k=20, Manhattan)"
 
             else:
-                # Demo heuristic
                 base = 0.29
                 if departure_hour >= 17:   base += 0.10
                 elif departure_hour <= 6:  base -= 0.08
@@ -276,8 +248,7 @@ with col_result:
             prob_delay = None
 
         if prob_delay is not None:
-            is_delayed = prob_delay >= 0.5
-            if is_delayed:
+            if prob_delay >= 0.5:
                 st.markdown(f"""
                 <div class="result-card-delay">
                     <div class="result-icon">🚨</div>
@@ -301,8 +272,7 @@ with col_result:
 
     st.markdown("""
     <div class="info-note">
-    <strong>Note:</strong> This model uses features available <em>before departure</em> only — airline, origin, time, season, and precipitation.
-    Post-departure realized values are excluded to prevent data leakage.
+    <strong>Note:</strong> Uses features available before departure only — airline, origin, time, season, and precipitation.
     Overall accuracy ~72%, ROC-AUC ~0.747.
     </div>
     """, unsafe_allow_html=True)
