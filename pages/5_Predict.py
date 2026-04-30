@@ -223,17 +223,17 @@ st.markdown("Enter your flight details below to get a delay probability predicti
 # Model status badges
 col_s1, col_s2 = st.columns(2)
 with col_s1:
-    if bagging_model:
+    if bagging_model is not None:
         st.success(f"✅ Bagging model loaded — {bagging_src}")
     else:
         st.error(f"❌ Bagging model unavailable — {bagging_src}")
 with col_s2:
-    if knn_model:
+    if knn_model is not None:
         st.success(f"✅ KNN model loaded — {knn_src}")
     else:
         st.error(f"❌ KNN model unavailable — {knn_src}")
 
-if not bagging_model and not knn_model:
+if bagging_model is None and knn_model is None:
     st.markdown("""
     <div class="lfs-note">
     ⚠️ <strong>Git LFS note:</strong> Your <code>.pkl</code> files appear to be stored in Git LFS.
@@ -248,8 +248,8 @@ col_form, col_result = st.columns([1.2, 1])
 
 with col_form:
     model_options = []
-    if bagging_model: model_options.append("Bagged Decision Trees")
-    if knn_model:     model_options.append("KNN (k=20, Manhattan)")
+    if bagging_model is not None: model_options.append("Bagged Decision Trees")
+    if knn_model is not None:     model_options.append("KNN (k=20, Manhattan)")
     if not model_options: model_options = ["Demo Mode (Heuristic)"]
 
     selected_model = st.selectbox("🤖 Select Model", model_options)
@@ -303,14 +303,14 @@ with col_result:
         prob_delay = None
         model_used = ""
         try:
-            if selected_model == "Bagged Decision Trees" and bagging_model:
+            if selected_model == "Bagged Decision Trees" and bagging_model is not None:
                 X = build_features_bagging(month, day_of_month, day_of_week, carrier,
                                            origin_city, origin_state, dep_time_int,
                                            departure_hour, precipitation)
                 prob_delay = float(bagging_model.predict_proba(X)[0][1])
                 model_used = "Bagged Decision Trees"
 
-            elif selected_model == "KNN (k=20, Manhattan)" and knn_model:
+            elif selected_model == "KNN (k=20, Manhattan)" and knn_model is not None:
                 X = build_features_knn(month, day_of_month, day_of_week, carrier,
                                        origin_city, origin_state, dep_time_int,
                                        departure_hour, precipitation)
