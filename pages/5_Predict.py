@@ -71,69 +71,102 @@ st.markdown("""
 #   2. raw.githubusercontent.com    (works when files are committed normally, <100 MB)
 #   3. Local file path              (works when running locally from the cloned repo)
 
-REPO   = "viduu24/Flight_Delay_Prediction"
-BRANCH = "main"
+REPO      = "viduu24/Flight_Delay_Prediction"
+BRANCH    = "main"
 MODEL_REL = "Code/Models"
 
-URLS = {
-    "bagging": {
-        "lfs":   f"https://media.githubusercontent.com/media/{REPO}/{BRANCH}/{MODEL_REL}/bagging_model.pkl",
-        "raw":   f"https://raw.githubusercontent.com/{REPO}/{BRANCH}/{MODEL_REL}/bagging_model.pkl",
-    },
-    "knn": {
-        "lfs":   f"https://media.githubusercontent.com/media/{REPO}/{BRANCH}/{MODEL_REL}/knn_model.pkl",
-        "raw":   f"https://raw.githubusercontent.com/{REPO}/{BRANCH}/{MODEL_REL}/knn_model.pkl",
-    },
-}
+# Every URL pattern that could serve the actual binary
+def _model_urls(filename: str) -> list[tuple[str, str]]:
+    """Returns list of (label, url) to try in order."""
+    return [
+        # 1. GitHub LFS media CDN — serves real binary for LFS-tracked files
+        ("LFS CDN",
+         f"https://media.githubusercontent.com/media/{REPO}/{BRANCH}/{MODEL_REL}/{filename}"),
+        # 2. Raw URL — works if committed normally (not via LFS)
+        ("Raw URL",
+         f"https://raw.githubusercontent.com/{REPO}/{BRANCH}/{MODEL_REL}/{filename}"),
+        # 3. GitHub API contents endpoint — returns base64, works for files <100MB
+        ("API base64",
+         f"https://api.github.com/repos/{REPO}/contents/{MODEL_REL}/{filename}"),
+    ]
 
-LFS_POINTER_MAGIC = b"version https://git-lfs"   # first bytes of an LFS pointer
+LFS_POINTER_MAGIC = b"version https://git-lfs"
 
+def _is_lfs_pointer(data: bytes) -> bool:
+    return data[:50].lstrip().startswith(LFS_POINTER_MAGIC)
 
-def _is_lfs_pointer(content: bytes) -> bool:
-    return content[:30].lstrip().startswith(LFS_POINTER_MAGIC)
-
-
-def _load_pkl_from_bytes(content: bytes):
-    return pickle.loads(content)
+def _pkl_from_bytes(data: bytes):
+    return pickle.loads(data)
 
 
 @st.cache_resource(show_spinner="Loading model…")
 def _fetch_model(name: str):
     """
-    Try LFS CDN first, then raw URL, then local file.
-    Returns (model_object, source_description) or (None, error_msg).
+    Try every URL strategy in order. Never silently swallow errors —
+    collect them all and surface in the status message so it is debuggable.
+    Returns (model_object, source_label) or (None, error_summary).
     """
     from pathlib import Path
+    import base64
 
-    # ── Strategy 1 & 2: GitHub URLs ──────────────────────────────────────────
-    for url_type, url in URLS[name].items():
+    filename = f"{name}_model.pkl"
+    attempts = []   # list of (label, outcome_string)
+
+    for label, url in _model_urls(filename):
         try:
-            r = requests.get(url, timeout=60, allow_redirects=True)
+            headers = {"Accept": "application/vnd.github.v3.raw"} if "api.github" in url else {}
+            r = requests.get(url, timeout=60, allow_redirects=True, headers=headers)
             r.raise_for_status()
-            content = r.content
 
-            if _is_lfs_pointer(content):
-                # Got the pointer file instead of the binary — try next URL
+            # GitHub API returns JSON with base64-encoded content
+            if "api.github" in url:
+                import json as _json
+                payload = _json.loads(r.content)
+                if payload.get("encoding") == "base64":
+                    data = base64.b64decode(payload["content"])
+                else:
+                    attempts.append((label, "unexpected API encoding"))
+                    continue
+            else:
+                data = r.content
+
+            if _is_lfs_pointer(data):
+                attempts.append((label, f"got LFS pointer ({len(data)} bytes) — not the binary"))
                 continue
 
-            model = _load_pkl_from_bytes(content)
-            return model, f"GitHub ({url_type.upper()} URL)"
+            model = _pkl_from_bytes(data)
+            return model, f"{label} ✅"
 
-        except requests.exceptions.RequestException:
-            continue
-        except (pickle.UnpicklingError, Exception):
-            continue
+        except requests.exceptions.HTTPError as e:
+            attempts.append((label, f"HTTP {e.response.status_code}"))
+        except requests.exceptions.RequestException as e:
+            attempts.append((label, f"network error: {e}"))
+        except Exception as e:
+            attempts.append((label, f"failed: {e}"))
 
-    # ── Strategy 3: local file (running from cloned repo) ────────────────────
-    here = Path(__file__).resolve().parent.parent   # repo root
-    local = here / "Code" / "Models" / f"{name}_model.pkl"
+    # ── Local file fallback ───────────────────────────────────────────────────
+    here  = Path(__file__).resolve().parent.parent
+    local = here / "Code" / "Models" / filename
     if local.exists():
-        with open(local, "rb") as f:
+        data = local.read_bytes()
+        if _is_lfs_pointer(data):
+            attempts.append(("local file", "is a Git LFS pointer (not the binary)"))
+        else:
             try:
-                model = pickle.load(f)
-                return model, f"Local file: `{local.relative_to(here)}`"
+                model = _pkl_from_bytes(data)
+                return model, "local file ✅"
             except Exception as e:
-                return None, f"Local file found but failed to load: {e}"
+                attempts.append(("local file", f"failed: {e}"))
+    else:
+        attempts.append(("local file", "not found on disk"))
+
+    summary = " | ".join(f"{lbl}: {outcome}" for lbl, outcome in attempts)
+    return None, summary
+        try:
+            model = pickle.loads(raw)
+            return model, f"Local file: `{local.relative_to(here)}`"
+        except Exception as e:
+            return None, f"Local file found but failed to load: {e}"
 
     return None, "Not found via GitHub (LFS or raw) or local path"
 
@@ -226,19 +259,26 @@ with col_s1:
     if bagging_model is not None:
         st.success(f"✅ Bagging model loaded — {bagging_src}")
     else:
-        st.error(f"❌ Bagging model unavailable — {bagging_src}")
+        st.error("❌ Bagging model failed to load")
+        with st.expander("🔍 Debug — Bagging load attempts"):
+            st.code(bagging_src)
 with col_s2:
     if knn_model is not None:
         st.success(f"✅ KNN model loaded — {knn_src}")
     else:
-        st.error(f"❌ KNN model unavailable — {knn_src}")
+        st.error("❌ KNN model failed to load")
+        with st.expander("🔍 Debug — KNN load attempts"):
+            st.code(knn_src)
 
 if bagging_model is None and knn_model is None:
     st.markdown("""
     <div class="lfs-note">
-    ⚠️ <strong>Git LFS note:</strong> Your <code>.pkl</code> files appear to be stored in Git LFS.
-    The app tries <code>media.githubusercontent.com</code> (LFS CDN) first, then the raw URL.
-    If both fail, run the app <strong>locally from the cloned repo</strong> — it will load the files directly from disk.
+    ⚠️ <strong>Git LFS note:</strong> Your <code>.pkl</code> files are stored in Git LFS.
+    Streamlit Cloud does not download LFS files automatically, so the app fetches them from the
+    GitHub LFS CDN (<code>media.githubusercontent.com</code>). If this fails and the repo is
+    <strong>private</strong>, the easiest fix is to recommit the <code>.pkl</code> files without
+    LFS tracking — remove them from <code>.gitattributes</code>, then <code>git add</code> and
+    recommit. They are small enough to store normally.
     </div>
     """, unsafe_allow_html=True)
 
