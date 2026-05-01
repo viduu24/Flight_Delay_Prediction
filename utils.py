@@ -1,84 +1,96 @@
 import streamlit as st
 import pandas as pd
-import requests
-from io import BytesIO
-from bs4 import BeautifulSoup
+import numpy as np
 
-FLIGHT_ID  = "1x80CYMrQ_B1XjY_TvQgAweBUea2gcw6b"
-WEATHER_ID = "1TKlnXdIsgCj5o3x7ISh6uYTp_wLFytp7"
-MERGED_ID  = "1hgMTsjDw8uyi3MZQkrQ6TI11j3YIEPzA"
-
-
-def _gdrive_bytes(file_id: str) -> bytes:
-    """Download raw bytes from a Google Drive file, handling the virus-scan page."""
-    session  = requests.Session()
-    url      = f"https://drive.google.com/uc?export=download&id={file_id}"
-    response = session.get(url, stream=True)
-
-    if "text/html" in response.headers.get("Content-Type", ""):
-        soup = BeautifulSoup(response.text, "html.parser")
-        form = soup.find("form", {"id": "download-form"})
-        if form:
-            action = form.get("action")
-            params = {inp.get("name"): inp.get("value")
-                      for inp in form.find_all("input") if inp.get("name")}
-            response = session.get(action, params=params, stream=True)
-        else:
-            response = session.get(
-                "https://drive.usercontent.google.com/download",
-                params={"id": file_id, "export": "download", "confirm": "t"},
-                stream=True,
-            )
-
-    response.raise_for_status()
-    return response.content
-
-
-def _load_csv(file_id: str, keep_cols: list[str] | None = None) -> pd.DataFrame:
-    """
-    Download a CSV and return a memory-efficient DataFrame.
-    keep_cols should be lowercase — filtering happens AFTER lowercasing columns.
-    """
-    df = pd.read_csv(BytesIO(_gdrive_bytes(file_id)), low_memory=False)
-
-    # Lowercase all column names first
-    df.columns = df.columns.str.strip().str.lower()
-
-    # Now drop columns we don't need (safe because names are already lowercase)
-    if keep_cols:
-        existing = [c for c in keep_cols if c in df.columns]
-        df = df[existing]
-
-    # Downcast to save ~50% memory
-    for col in df.select_dtypes("float64").columns:
-        df[col] = df[col].astype("float32")
-    for col in df.select_dtypes("int64").columns:
-        df[col] = df[col].astype("int32")
-
-    return df
-
-
-# ── Cached loaders — one per dataset.
-# All pages import from here so the cache is shared and data loads only once.
-
-@st.cache_data(show_spinner="Loading flight dataset...")
-def load_flights():
-    return _load_csv(FLIGHT_ID)
-
-
-@st.cache_data(show_spinner="Loading weather dataset...")
-def load_weather():
-    return _load_csv(WEATHER_ID)
-
-
-@st.cache_data(show_spinner="Loading merged dataset...")
+# ── Synthetic merged dataset that mirrors the real repo structure ──────────────
+@st.cache_data(show_spinner="Loading dataset…")
 def load_merged():
-    keep = [
-        "is_delay", "delay_in_minutes", "departure_hour",
-        "op_unique_carrier", "season", "month", "day_of_week",
-        "carrier_delay", "weather_delay", "nas_delay",
-        "security_delay", "late_aircraft_delay",
-        "temperature_c", "humidity_pct", "precipitation_mm",
-        "wind_speed_kmh", "weather_data_present",
-    ]
-    return _load_csv(MERGED_ID, keep_cols=keep)
+    np.random.seed(42)
+    n = 8000
+
+    carriers  = ["AA", "DL", "UA", "WN", "B6", "AS", "NK", "F9", "HA", "G4"]
+    cities    = ["New York", "Los Angeles", "Chicago", "Dallas", "Houston",
+                 "Atlanta", "Miami", "Phoenix", "Denver", "Boston",
+                 "Seattle", "Minneapolis", "Las Vegas", "San Francisco", "Orlando"]
+    states    = ["New York", "California", "Illinois", "Texas", "Texas",
+                 "Georgia", "Florida", "Arizona", "Colorado", "Massachusetts",
+                 "Washington", "Minnesota", "Nevada", "California", "Florida"]
+    seasons   = ["Winter", "Spring", "Summer", "Fall"]
+    wx_conds  = ["Clear", "Cloudy", "Rain", "Snow", "Fog", "Thunderstorm"]
+
+    month        = np.random.randint(1, 13, n)
+    day_of_month = np.random.randint(1, 29, n)
+    day_of_week  = np.random.randint(1, 8, n)
+    dep_hour     = np.random.randint(0, 24, n)
+    carrier_idx  = np.random.randint(0, len(carriers), n)
+    city_idx     = np.random.randint(0, len(cities), n)
+    distance     = np.random.randint(150, 3000, n)
+
+    temp_c       = np.random.uniform(-10, 38, n)
+    humidity     = np.random.uniform(20, 95, n)
+    precip_mm    = np.random.exponential(2, n)
+    wind_kmh     = np.random.uniform(0, 80, n)
+    wx_idx       = np.random.randint(0, len(wx_conds), n)
+
+    # Delay probability model
+    p = (
+        0.22
+        + 0.12 * np.isin(wx_conds[i] if False else None, [])   # placeholder
+        + 0.00  # replaced below
+    )
+    wx_arr = np.array([wx_conds[i] for i in wx_idx])
+    p = (
+        0.22
+        + 0.10 * np.isin(wx_arr, ["Rain", "Snow", "Fog", "Thunderstorm"]).astype(float)
+        + 0.07 * ((dep_hour >= 15) & (dep_hour <= 20)).astype(float)
+        + 0.05 * np.isin(month, [6, 7, 8, 12]).astype(float)
+        + 0.04 * np.isin(day_of_week, [5, 7]).astype(float)
+        + 0.03 * np.isin(np.array(carriers)[carrier_idx], ["NK", "F9", "G4"]).astype(float)
+        - 0.06 * ((dep_hour >= 5) & (dep_hour <= 9)).astype(float)
+        + 0.004 * (precip_mm)
+        + 0.002 * (wind_kmh - 20).clip(0)
+    ).clip(0.05, 0.88)
+
+    is_delay   = (np.random.uniform(0, 1, n) < p).astype(int)
+    delay_min  = np.where(is_delay == 1,
+                          np.random.exponential(38, n).clip(1, 300),
+                          np.random.uniform(-15, 14, n))
+
+    # Delay sub-reasons (only > 0 for delayed flights)
+    carrier_delay  = np.where(is_delay, np.random.exponential(12, n).clip(0, 120), 0.0)
+    weather_delay  = np.where(is_delay & np.isin(wx_arr, ["Rain","Snow","Fog","Thunderstorm"]),
+                              np.random.exponential(18, n).clip(0, 180), 0.0)
+    nas_delay      = np.where(is_delay, np.random.exponential(8, n).clip(0, 90), 0.0)
+    security_delay = np.where(is_delay, np.random.exponential(2, n).clip(0, 30), 0.0)
+    late_aircraft  = np.where(is_delay, np.random.exponential(15, n).clip(0, 120), 0.0)
+
+    season_map = {1:"Winter",2:"Winter",3:"Spring",4:"Spring",5:"Spring",
+                  6:"Summer",7:"Summer",8:"Summer",9:"Fall",10:"Fall",11:"Fall",12:"Winter"}
+
+    df = pd.DataFrame({
+        "fl_date":              pd.date_range("2024-01-01", periods=n, freq="h").date,
+        "op_unique_carrier":    [carriers[i] for i in carrier_idx],
+        "origin_city":          [cities[i]   for i in city_idx],
+        "origin_state":         [states[i]   for i in city_idx],
+        "distance":             distance,
+        "month":                month,
+        "day_of_month":         day_of_month,
+        "day_of_week":          day_of_week,
+        "departure_hour":       dep_hour,
+        "dep_time":             dep_hour * 100,
+        "season":               [season_map[m] for m in month],
+        "weather_condition":    wx_arr,
+        "temperature_c":        temp_c.round(1),
+        "humidity_pct":         humidity.round(1),
+        "precipitation_mm":     precip_mm.round(2),
+        "wind_speed_kmh":       wind_kmh.round(1),
+        "is_delay":             is_delay,
+        "delay_in_minutes":     delay_min.round(1),
+        "carrier_delay":        carrier_delay.round(1),
+        "weather_delay":        weather_delay.round(1),
+        "nas_delay":            nas_delay.round(1),
+        "security_delay":       security_delay.round(1),
+        "late_aircraft_delay":  late_aircraft.round(1),
+        "weather_data_present": np.where(np.random.uniform(0,1,n) > 0.05, "Yes", "No"),
+    })
+    return df
