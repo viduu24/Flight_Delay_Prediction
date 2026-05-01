@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from styles import apply_theme, PLOTLY_LAYOUT, PURPLE_SEQ, ACCENT_COLOR, LEGEND_H, LEGEND_DEFAULT
 from utils import load_merged
 
-st.set_page_config(page_title="Weather EDA", page_icon="🌦️", layout="wide")
+st.set_page_config(page_title="Weather EDA", page_icon="", layout="wide")
 apply_theme()
 
 df = load_merged()
@@ -21,7 +21,7 @@ for col in ["is_delay","weather_delay","temperature_c","humidity_pct","precipita
 has_wx = all(c in df.columns for c in ["temperature_c","humidity_pct","precipitation_mm","wind_speed_kmh"])
 
 # ── Header ─────────────────────────────────────────────────────────────────────
-st.markdown('<div class="section-header">🌦️ Weather EDA</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-header"> Weather EDA</div>', unsafe_allow_html=True)
 st.markdown("<p style='color:#6B6A9B;'>How temperature, precipitation, wind, and humidity relate to flight delays.</p>", unsafe_allow_html=True)
 st.divider()
 
