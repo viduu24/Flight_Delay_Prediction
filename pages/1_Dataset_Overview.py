@@ -5,42 +5,54 @@ st.set_page_config(page_title="Dataset Overview", page_icon="", layout="wide")
 
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
-    html, body, [class*="css"] { font-family: 'Space Grotesk', sans-serif; }
-    .stApp { background-color: #EEF0F8; color: #e2e8f0; }
-    section[data-testid="stSidebar"] { background-color: #EEF0F8; border-right: 1px solid #1e2d4a; }
-    h1, h2, h3 { color: #e2e8f0 !important; }
-    .section-header {
-        font-size: 1.5rem; font-weight: 600;
-        background: linear-gradient(135deg, #60a5fa, #818cf8);
-        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        margin-bottom: 0.5rem;
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+    html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
+    .stApp { background-color: #ECEEF8; color: #2D2B6B; }
+    section[data-testid="stSidebar"] { background-color: #2D2B6B !important; border-right: none; }
+    section[data-testid="stSidebar"] * { color: #C4B5E8 !important; }
+    section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"] { color: #EEF0F8 !important; border-radius: 8px; }
+    section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"]:hover { background: rgba(196,181,232,0.15) !important; }
+    section[data-testid="stSidebar"] [aria-selected="true"] { background: rgba(196,181,232,0.25) !important; }
+    h1, h2, h3, h4 { color: #2D2B6B !important; }
+    label, p { color: #3D3B7B !important; }
+    hr { border-color: #C4B5E8 !important; opacity: 0.4; }
+    .stButton > button {
+        background: #2D2B6B !important; color: #EEF0F8 !important;
+        border: none !important; border-radius: 10px !important;
+        font-weight: 600 !important; transition: all 0.2s !important;
     }
-    .info-card {
-        background: linear-gradient(135deg, #111827, #1a2438);
-        border: 1px solid #1e3a5f;
-        border-radius: 12px;
-        padding: 1.2rem 1.5rem;
-        margin-bottom: 1rem;
+    .stButton > button:hover { background: #3D3B9B !important; transform: translateY(-1px) !important; }
+
+    .hero-title {
+        font-size: 3rem; font-weight: 700; color: #2D2B6B;
+        letter-spacing: -0.02em; margin-bottom: 0.3rem;
     }
-    .info-card h4 { color: #60a5fa; margin: 0 0 0.5rem 0; }
-    .info-card p, .info-card li { color: #94a3b8; font-size: 0.9rem; margin: 0.25rem 0; }
-    .badge {
-        display: inline-block; background: #1e3a5f; color: #60a5fa;
-        border-radius: 6px; padding: 0.15rem 0.5rem;
-        font-size: 0.75rem; font-family: 'JetBrains Mono', monospace;
-        margin: 0.1rem;
+    .hero-accent { color: #9B89C4; }
+    .hero-sub { font-size: 1.05rem; color: #9B89C4; margin-bottom: 2rem; }
+    .kpi-card {
+        background: #FFFFFF; border: 1.5px solid #C4B5E8;
+        border-radius: 14px; padding: 1rem 1.2rem; text-align: center;
     }
-    .badge-green { background: #052e16; color: #4ade80; }
-    .badge-yellow { background: #1c1917; color: #fbbf24; }
-    .pipeline-step {
-        background: #111827; border-left: 3px solid #60a5fa;
-        border-radius: 0 8px 8px 0; padding: 0.8rem 1rem; margin-bottom: 0.6rem;
+    .kpi-card .val { font-size: 1.8rem; font-weight: 700; color: #2D2B6B; }
+    .kpi-card .lbl { font-size: 0.72rem; color: #9B89C4; margin-top: 0.2rem;
+                     text-transform: uppercase; letter-spacing: 0.06em; }
+    .nav-card {
+        background: #FFFFFF; border: 1.5px solid #C4B5E8; border-radius: 14px;
+        padding: 1.3rem; margin-bottom: 0.8rem; cursor: pointer;
+        transition: all 0.2s;
     }
-    .pipeline-step .step-title { color: #60a5fa; font-weight: 600; font-size: 0.95rem; }
-    .pipeline-step .step-desc { color: #94a3b8; font-size: 0.85rem; margin-top: 0.2rem; }
+    .nav-card:hover { border-color: #2D2B6B; box-shadow: 0 6px 24px rgba(45,43,107,0.12); transform: translateY(-2px); }
+    .nav-card h3 { color: #2D2B6B; margin: 0 0 0.3rem 0; font-size: 1rem; font-weight: 600; }
+    .nav-card p  { color: #9B89C4; margin: 0; font-size: 0.84rem; }
+    .pill {
+        display: inline-block; background: #EEE8FA; color: #2D2B6B;
+        border: 1px solid #C4B5E8; border-radius: 999px;
+        padding: 0.2rem 0.7rem; font-size: 0.76rem; margin: 0.2rem;
+        font-family: 'DM Mono', monospace;
+    }
 </style>
 """, unsafe_allow_html=True)
+
 
 st.markdown('<div class="section-header">📦 Dataset Overview</div>', unsafe_allow_html=True)
 st.markdown("This page describes the two source datasets, the engineered features, and how they were joined into the final modelling dataset.", unsafe_allow_html=False)
