@@ -1,5 +1,5 @@
 import streamlit as st
-from styles import apply_theme, PLOTLY_LAYOUT, PURPLE_SEQ, ACCENT_COLOR
+from styles import apply_theme, PLOTLY_LAYOUT, PURPLE_SEQ, ACCENT_COLOR, LEGEND_H, LEGEND_DEFAULT
 from utils import load_merged
 import plotly.express as px
 import plotly.graph_objects as go
@@ -103,8 +103,8 @@ with col2:
         hole=0.42,
         template="plotly_white",
     )
-    fig2.update_layout(**PLOTLY_LAYOUT, height=340,
-                       legend=dict(orientation="h", y=-0.1))
+    fig2.update_layout(**PLOTLY_LAYOUT, height=340)
+    fig2.update_layout(**LEGEND_H)
     fig2.update_traces(textfont_color="#FFFFFF",
                        marker=dict(line=dict(color="#EEF0F8", width=2)))
     st.plotly_chart(fig2, use_container_width=True)
