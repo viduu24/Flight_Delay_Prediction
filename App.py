@@ -112,16 +112,16 @@ with col2:
 st.divider()
 
 # ── Project goals ──────────────────────────────────────────────────────────────
-st.markdown("### 🎯 Project Goals")
+st.markdown("### Project Goals")
 col1, col2, col3 = st.columns(3)
 goals = [
-    ("📊", "Binary Classification",
+    ("", "Binary Classification",
      "Predict <b>IS_Delay = 1</b> for flights arriving ≥ 15 minutes late, "
      "using only features known before departure."),
-    ("🌦️", "Weather Integration",
+    ("", "Weather Integration",
      "Merge hourly weather sensor data (temperature, precipitation, wind, humidity) "
      "matched to each flight's origin city and departure time."),
-    ("🤖", "Model Comparison",
+    ("", "Model Comparison",
      "Compare <b>Bagged Decision Trees</b> (AUC 0.747) vs <b>KNN</b> (AUC 0.712) "
      "against a majority-class baseline (AUC 0.500)."),
 ]
@@ -138,12 +138,12 @@ for col, (icon, title, body) in zip([col1, col2, col3], goals):
 st.divider()
 
 # ── Quick insight strip ────────────────────────────────────────────────────────
-st.markdown("### 💡 Key Findings")
+st.markdown("### Key Findings")
 insights = [
-    "🕔 Afternoon departures (3–8 PM) have the highest delay rates — cascading schedule effects.",
-    "🌧️ Thunderstorm and Fog conditions drive the sharpest weather-related delay spikes.",
-    "📅 June–August and December see elevated delays due to peak travel and winter weather.",
-    "🏆 Bagged Decision Trees outperform KNN on all metrics — F1 0.522 vs 0.480.",
+    "Afternoon departures (3–8 PM) have the highest delay rates — cascading schedule effects.",
+    "Thunderstorm and Fog conditions drive the sharpest weather-related delay spikes.",
+    "June–August and December see elevated delays due to peak travel and winter weather.",
+    "Bagged Decision Trees outperform KNN on all metrics — F1 0.522 vs 0.480.",
 ]
 for txt in insights:
     st.markdown(f'<div class="insight-box">{txt}</div>', unsafe_allow_html=True)
