@@ -25,7 +25,10 @@ with st.sidebar:
         ✈️ Flight Delay<br>Prediction
       </div>
       <div style='font-size:0.75rem; color:#9B89C4; margin-top:4px;'>
-        AhmadJabbar2502
+        Ahmad Jabbar
+        Ivan Bega
+        Syeda Nowrin Reza
+        Vidushi Bhar
       </div>
     </div>
     """, unsafe_allow_html=True)
