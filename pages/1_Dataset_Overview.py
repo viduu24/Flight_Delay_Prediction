@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from styles import apply_theme, PLOTLY_LAYOUT, PURPLE_SEQ, ACCENT_COLOR, LEGEND_H, LEGEND_DEFAULT
 from utils import load_merged
 
-st.set_page_config(page_title="Flight EDA", page_icon="✈️", layout="wide")
+st.set_page_config(page_title="Flight EDA", page_icon="", layout="wide")
 apply_theme()
 
 df = load_merged()
@@ -40,7 +40,7 @@ c5.metric("Median Delay",    f"{med_delay:.1f} min")
 st.divider()
 
 # ── Tabs ───────────────────────────────────────────────────────────────────────
-tab1, tab2, tab3, tab4 = st.tabs(["📅 Time Patterns", "✈️ Airlines", "🗺️ Routes & Distance", "⏱️ Delay Causes"])
+tab1, tab2, tab3, tab4 = st.tabs(["Time Patterns", "Airlines", "Routes & Distance", "Delay Causes"])
 
 # ────────────── TAB 1: Time ──────────────
 with tab1:
