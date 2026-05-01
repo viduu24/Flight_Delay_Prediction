@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+from styles import apply_theme
+apply_theme()
 
 st.set_page_config(page_title="Dataset Overview", page_icon="", layout="wide")
 
