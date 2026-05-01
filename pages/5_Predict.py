@@ -162,7 +162,7 @@ def heuristic_prob(month, dow, hour, carrier, precip):
     return float(np.clip(base + np.random.normal(0, 0.015), 0.05, 0.95))
 
 # ── Page ───────────────────────────────────────────────────────────────────────
-st.markdown('<div class="section-header">🔮 Predict a Flight</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-header">Predict a Flight</div>', unsafe_allow_html=True)
 st.markdown("<p style='color:#6B6A9B;'>Enter flight details to get a delay probability prediction.</p>", unsafe_allow_html=True)
 st.divider()
 
@@ -170,16 +170,16 @@ st.divider()
 c1, c2 = st.columns(2)
 with c1:
     if bagging_model is not None:
-        st.success("✅ Bagging model loaded")
+        st.success("Bagging model loaded")
     else:
-        st.warning("⚠️ Bagging model not found — Demo mode will be used")
+        st.warning("Bagging model not found — Demo mode will be used")
         with st.expander("Debug"):
             st.code(bagging_src)
 with c2:
     if knn_model is not None:
-        st.success("✅ KNN model loaded")
+        st.success("KNN model loaded")
     else:
-        st.warning("⚠️ KNN model not found — Demo mode will be used")
+        st.warning("KNN model not found — Demo mode will be used")
         with st.expander("Debug"):
             st.code(knn_src)
 
