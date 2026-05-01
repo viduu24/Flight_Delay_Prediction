@@ -11,7 +11,7 @@ apply_theme()
 df = load_merged()
 
 if df is None:
-    st.error("❌ Dataset could not be loaded.")
+    st.error("Dataset could not be loaded.")
     st.stop()
 
 for col in ["is_delay", "delay_in_minutes", "departure_hour"]:
@@ -40,7 +40,7 @@ c5.metric("Median Delay",    f"{med_delay:.1f} min")
 st.divider()
 
 # ── Tabs ───────────────────────────────────────────────────────────────────────
-tab1, tab2, tab3, tab4 = st.tabs(["📅 Time Patterns", "✈️ Airlines", "🗺️ Routes & Distance", "⏱️ Delay Causes"])
+tab1, tab2, tab3, tab4 = st.tabs(["Time Patterns", "Airlines", "Routes & Distance", "Delay Causes"])
 
 # ────────────── TAB 1: Time ──────────────
 with tab1:
