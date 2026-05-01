@@ -6,7 +6,7 @@ import json
 import base64
 import requests
 from pathlib import Path
-from styles import apply_theme, PLOTLY_LAYOUT, ACCENT_COLOR
+from styles import apply_theme, PLOTLY_LAYOUT, ACCENT_COLOR, LEGEND_H, LEGEND_DEFAULT
 import plotly.graph_objects as go
 
 st.set_page_config(page_title="Predict a Flight", page_icon="🔮", layout="wide")
