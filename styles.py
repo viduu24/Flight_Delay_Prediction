@@ -15,8 +15,11 @@ PLOTLY_LAYOUT = dict(
     title_font=dict(color="#2D2B6B", size=15),
     xaxis=dict(gridcolor="#C4B5E8", linecolor="#C4B5E8", tickfont=dict(color="#6B6A9B")),
     yaxis=dict(gridcolor="#C4B5E8", linecolor="#C4B5E8", tickfont=dict(color="#6B6A9B")),
-    legend=dict(font=dict(color="#2D2B6B")),
+    # legend intentionally omitted — set per-chart to avoid duplicate kwarg errors
 )
+
+LEGEND_H = dict(legend=dict(orientation="h", y=-0.15, font=dict(color="#2D2B6B")))
+LEGEND_DEFAULT = dict(legend=dict(font=dict(color="#2D2B6B")))
 
 PURPLE_SEQ   = ["#2D2B6B", "#4A3F9F", "#7B6DC4", "#9B89C4", "#C4B5E8", "#E0D9F5"]
 PURPLE_DIVG  = ["#2D2B6B", "#6B6A9B", "#C4B5E8", "#FFFFFF", "#E8D5B7", "#9B6A4B", "#5C3317"]
