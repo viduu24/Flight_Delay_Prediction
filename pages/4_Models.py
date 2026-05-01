@@ -17,9 +17,9 @@ st.divider()
 st.markdown("### 🔩 Features Used in Modelling")
 
 feat_groups = {
-    "📅 Temporal": ["month","day_of_month","day_of_week","departure_hour","season"],
-    "✈️ Operational": ["op_unique_carrier","origin_city","origin_state","dep_time"],
-    "🌦️ Weather": ["precipitation_mm"],
+    "Temporal": ["month","day_of_month","day_of_week","departure_hour","season"],
+    "Operational": ["op_unique_carrier","origin_city","origin_state","dep_time"],
+    "Weather": ["precipitation_mm"],
 }
 
 cols = st.columns(3)
@@ -44,7 +44,7 @@ KNN additionally uses cyclical sin/cos encoding for hour, month, and day-of-week
 st.divider()
 
 # ── Model comparison table ──────────────────────────────────────────────────────
-st.markdown("### 📊 Model Comparison")
+st.markdown("### Model Comparison")
 
 metrics = pd.DataFrame({
     "Model":     ["Baseline (Majority Class)", "Bagged Decision Trees", "KNN (k=20, Manhattan)"],
@@ -71,7 +71,7 @@ st.dataframe(
     }),
     use_container_width=True, hide_index=True,
 )
-st.markdown('<div class="insight-box">🏆 Bagged Decision Trees outperform KNN on every metric. Both far exceed the majority-class baseline on precision, recall, F1, and AUC — confirming that the combined flight + weather features carry real predictive signal.</div>', unsafe_allow_html=True)
+st.markdown('<div class="insight-box"> Bagged Decision Trees outperform KNN on every metric. Both far exceed the majority-class baseline on precision, recall, F1, and AUC — confirming that the combined flight + weather features carry real predictive signal.</div>', unsafe_allow_html=True)
 
 st.divider()
 
@@ -95,7 +95,7 @@ with col1:
 with col2:
     st.markdown("""
     <div class="model-card" style="border-color:#9B89C4;">
-        <h3>🌳 Bagged Decision Trees <span class="winner-badge">Best</span></h3>
+        <h3> Bagged Decision Trees <span class="winner-badge">Best</span></h3>
         <p>BaggingClassifier with base DecisionTreeClassifier. Label-encoded categoricals + numeric features.</p><br>
         <span class="badge badge-green">Accuracy 72.4%</span>
         <span class="badge badge-green">F1 0.522</span>
@@ -107,7 +107,7 @@ with col2:
 with col3:
     st.markdown("""
     <div class="model-card">
-        <h3>🔵 KNN Classifier</h3>
+        <h3> KNN Classifier</h3>
         <p>k=20 neighbors, uniform weights, Manhattan distance. Cyclical encoding for hour/month/dow.</p><br>
         <span class="badge">Accuracy 71.3%</span>
         <span class="badge">F1 0.480</span>
@@ -119,7 +119,7 @@ with col3:
 st.divider()
 
 # ── Performance bar chart ──────────────────────────────────────────────────────
-st.markdown("### 📈 Metric Comparison Chart")
+st.markdown("### Metric Comparison Chart")
 
 met_long = metrics.melt(id_vars="Model", var_name="Metric", value_name="Score")
 fig = px.bar(
@@ -134,7 +134,7 @@ st.plotly_chart(fig, use_container_width=True)
 st.divider()
 
 # ── Confusion matrices ─────────────────────────────────────────────────────────
-st.markdown("### 🧮 Confusion Matrices (representative)")
+st.markdown("### Confusion Matrices (representative)")
 
 def plot_cm(tn, fp, fn, tp, title):
     cm = np.array([[tn, fp],[fn, tp]])
@@ -159,12 +159,12 @@ with col1:
 with col2:
     st.plotly_chart(plot_cm(278000,97000,140000,97000,"KNN (k=20, Manhattan)"), use_container_width=True)
 
-st.caption("⚠️ Values are representative approximations from reported metrics. Load saved .pkl models with your test set for exact figures.")
+st.caption("Values are representative approximations from reported metrics. Load saved .pkl models with your test set for exact figures.")
 
 st.divider()
 
 # ── ROC curves ─────────────────────────────────────────────────────────────────
-st.markdown("### 📉 ROC Curve Comparison")
+st.markdown("### ROC Curve Comparison")
 
 fpr = np.linspace(0, 1, 120)
 
