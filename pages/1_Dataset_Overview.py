@@ -66,7 +66,7 @@ with col2:
 st.divider()
 
 # ── Engineered features ────────────────────────────────────────────────────────
-st.markdown("### 🔧 Engineered Features")
+st.markdown("### Engineered Features")
 
 feat_df = pd.DataFrame({
     "Feature":     ["IS_Delay", "delay_in_minutes", "Season", "Departure_Hour",
@@ -92,7 +92,7 @@ st.dataframe(feat_df, use_container_width=True, hide_index=True)
 st.divider()
 
 # ── Pipeline ───────────────────────────────────────────────────────────────────
-st.markdown("### 🔀 Data Pipeline")
+st.markdown("### Data Pipeline")
 
 steps = [
     ("1 · Load Raw Data",   "Read flight CSV from Flight_Data/ and weather CSV from Weather_Data/"),
@@ -114,7 +114,7 @@ for title, desc in steps:
 st.divider()
 
 # ── Schema ─────────────────────────────────────────────────────────────────────
-st.markdown("### 📊 Final Dataset Schema")
+st.markdown("### Final Dataset Schema")
 
 schema = pd.DataFrame({
     "Column":      ["fl_date", "op_unique_carrier", "origin_city", "origin_state",
