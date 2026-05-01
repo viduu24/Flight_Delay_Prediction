@@ -5,7 +5,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from styles import apply_theme, PLOTLY_LAYOUT, PURPLE_SEQ, ACCENT_COLOR, LEGEND_H, LEGEND_DEFAULT
 
-st.set_page_config(page_title="Models", page_icon="🤖", layout="wide")
+st.set_page_config(page_title="Models", page_icon="", layout="wide")
 apply_theme()
 
 # ── Header ─────────────────────────────────────────────────────────────────────
