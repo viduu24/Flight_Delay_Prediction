@@ -29,26 +29,7 @@ with st.sidebar:
       </div>
     </div>
     """, unsafe_allow_html=True)
-    st.divider()
-    st.markdown("""
-    <div style='font-size:0.8rem; color:#6B6A9B; line-height:1.8;'>
-    <b style='color:#2D2B6B;'>Navigate:</b><br>
-    • <b>App.py</b> — Overview<br>
-    • <b>1_Dataset</b> — Data description<br>
-    • <b>2_Flight_EDA</b> — Flight patterns<br>
-    • <b>3_Weather_EDA</b> — Weather impact<br>
-    • <b>4_Models</b> — ML results<br>
-    • <b>5_Predict</b> — Live predictor
-    </div>
-    """, unsafe_allow_html=True)
-    st.divider()
-    st.markdown("""
-    <div style='font-size:0.76rem; color:#9B89C4;'>
-    <b>Data:</b> BTS Flights + Weather (2024)<br>
-    <b>Models:</b> Bagged Trees · KNN<br>
-    <b>Target:</b> IS_Delay (≥ 15 min)
-    </div>
-    """, unsafe_allow_html=True)
+    
 
 # ── Page ───────────────────────────────────────────────────────────────────────
 st.markdown('<div class="section-header">✈️ Flight Delay Prediction</div>', unsafe_allow_html=True)
