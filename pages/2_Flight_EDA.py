@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from styles import apply_theme, PLOTLY_LAYOUT, PURPLE_SEQ, ACCENT_COLOR, LEGEND_H, LEGEND_DEFAULT
 from utils import load_merged
 
-st.set_page_config(page_title="Flight EDA", page_icon="✈️", layout="wide")
+st.set_page_config(page_title="Flight EDA", page_icon="", layout="wide")
 apply_theme()
 
 df = load_merged()
