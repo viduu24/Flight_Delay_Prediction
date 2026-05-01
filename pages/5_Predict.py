@@ -169,15 +169,15 @@ st.divider()
 # Model status pills
 c1, c2 = st.columns(2)
 with c1:
-    if bagging_model:
-        st.success(f"✅ Bagging model loaded")
+    if bagging_model is not None:
+        st.success("✅ Bagging model loaded")
     else:
         st.warning("⚠️ Bagging model not found — Demo mode will be used")
         with st.expander("Debug"):
             st.code(bagging_src)
 with c2:
-    if knn_model:
-        st.success(f"✅ KNN model loaded")
+    if knn_model is not None:
+        st.success("✅ KNN model loaded")
     else:
         st.warning("⚠️ KNN model not found — Demo mode will be used")
         with st.expander("Debug"):
@@ -190,8 +190,8 @@ col_form, col_result = st.columns([1.15, 1])
 
 with col_form:
     model_options = []
-    if bagging_model: model_options.append("Bagged Decision Trees")
-    if knn_model:     model_options.append("KNN (k=20, Manhattan)")
+    if bagging_model is not None: model_options.append("Bagged Decision Trees")
+    if knn_model is not None:     model_options.append("KNN (k=20, Manhattan)")
     model_options.append("Demo Mode (Heuristic)")
 
     selected_model = st.selectbox("🤖 Select Model", model_options)
@@ -250,14 +250,14 @@ with col_result:
         model_used = ""
 
         try:
-            if selected_model == "Bagged Decision Trees" and bagging_model:
+            if selected_model == "Bagged Decision Trees" and bagging_model is not None:
                 X = make_bagging_features(month, day_of_month, day_of_week,
                                           carrier, origin_city, origin_state,
                                           dep_time_int, departure_hour, precipitation)
                 prob_delay = float(bagging_model.predict_proba(X)[0][1])
                 model_used = "Bagged Decision Trees"
 
-            elif selected_model == "KNN (k=20, Manhattan)" and knn_model:
+            elif selected_model == "KNN (k=20, Manhattan)" and knn_model is not None:
                 X = make_knn_features(month, day_of_month, day_of_week,
                                       carrier, origin_city, origin_state,
                                       dep_time_int, departure_hour, precipitation)
