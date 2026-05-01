@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from styles import apply_theme, PLOTLY_LAYOUT, PURPLE_SEQ, ACCENT_COLOR
+from styles import apply_theme, PLOTLY_LAYOUT, PURPLE_SEQ, ACCENT_COLOR, LEGEND_H, LEGEND_DEFAULT
 from utils import load_merged
 
 st.set_page_config(page_title="Weather EDA", page_icon="🌦️", layout="wide")
@@ -62,8 +62,8 @@ with tab1:
             hole=0.4,
             title="All Flights — Delay Breakdown",
         )
-        fig.update_layout(**PLOTLY_LAYOUT, height=340,
-                          legend=dict(orientation="h", y=-0.15))
+        fig.update_layout(**PLOTLY_LAYOUT, height=340)
+        fig.update_layout(**LEGEND_H)
         fig.update_traces(marker=dict(line=dict(color="#EEF0F8", width=2)))
         st.plotly_chart(fig, use_container_width=True)
 
