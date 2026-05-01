@@ -25,9 +25,9 @@ with st.sidebar:
         ✈️ Flight Delay<br>Prediction
       </div>
       <div style='font-size:0.75rem; color:#9B89C4; margin-top:4px;'>
-        Ahmad Jabbar
-        Ivan Bega
-        Syeda Nowrin Reza
+        Ahmad Kashif Jabbar| 
+        Ivan Bega| 
+        Syeda Nowrin Reza| 
         Vidushi Bhar
       </div>
     </div>
