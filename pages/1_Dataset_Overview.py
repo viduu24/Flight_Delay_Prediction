@@ -1,14 +1,14 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="Dataset Overview", page_icon="📦", layout="wide")
+st.set_page_config(page_title="Dataset Overview", page_icon="", layout="wide")
 
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
     html, body, [class*="css"] { font-family: 'Space Grotesk', sans-serif; }
-    .stApp { background-color: #0a0e1a; color: #e2e8f0; }
-    section[data-testid="stSidebar"] { background-color: #0f1629; border-right: 1px solid #1e2d4a; }
+    .stApp { background-color: #EEF0F8; color: #e2e8f0; }
+    section[data-testid="stSidebar"] { background-color: #EEF0F8; border-right: 1px solid #1e2d4a; }
     h1, h2, h3 { color: #e2e8f0 !important; }
     .section-header {
         font-size: 1.5rem; font-weight: 600;
