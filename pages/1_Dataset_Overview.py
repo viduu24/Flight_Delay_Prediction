@@ -11,7 +11,7 @@ apply_theme()
 df = load_merged()
 
 if df is None:
-    st.error("❌ Dataset could not be loaded.")
+    st.error("Dataset could not be loaded.")
     st.stop()
 
 for col in ["is_delay", "delay_in_minutes", "departure_hour"]:
