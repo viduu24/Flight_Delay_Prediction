@@ -76,14 +76,14 @@ st.markdown('<div class="insight-box"> Bagged Decision Trees outperform KNN on e
 st.divider()
 
 # ── Model cards ────────────────────────────────────────────────────────────────
-st.markdown("### 🃏 Model Details")
+st.markdown("###Model Details")
 
 col1, col2, col3 = st.columns(3)
 
 with col1:
     st.markdown("""
     <div class="model-card">
-        <h3>📏 Baseline</h3>
+        <h3>Baseline</h3>
         <p>Predict the majority class (Not Delayed) for every flight — zero learning.</p><br>
         <span class="badge">Accuracy 71.3%</span>
         <span class="badge badge-warn">F1 0.000</span>
