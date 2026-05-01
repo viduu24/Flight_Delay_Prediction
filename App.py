@@ -106,7 +106,7 @@ goals = [
      "Merge hourly weather sensor data (temperature, precipitation, wind, humidity) "
      "matched to each flight's origin city and departure time."),
     ("", "Model Comparison",
-     "Compare <b>Bagged Decision Trees</b> (AUC 0.747) vs <b>KNN</b> (AUC 0.712) "
+     "Compare <b>Bagged Decision Trees</b> (AUC 0.815) vs <b>KNN</b> (AUC 0.712) "
      "against a majority-class baseline (AUC 0.500)."),
 ]
 for col, (icon, title, body) in zip([col1, col2, col3], goals):
