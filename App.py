@@ -36,7 +36,7 @@ with st.sidebar:
 
 # ── Page ───────────────────────────────────────────────────────────────────────
 st.markdown('<div class="section-header">✈️ Flight Delay Prediction</div>', unsafe_allow_html=True)
-st.markdown("<p style='color:#6B6A9B; font-size:1rem;'>End-to-end ML system predicting U.S. domestic flight delays using combined flight and weather data.</p>", unsafe_allow_html=True)
+st.markdown("<p style='color:#6B6A9B; font-size:1rem;'>In this project, we have combined the weather and flight dataset from kaggle and aimed to build a prediction system that predicts if a flight is going to be delayed or not..</p>", unsafe_allow_html=True)
 st.divider()
 
 # ── KPIs ───────────────────────────────────────────────────────────────────────
