@@ -11,7 +11,7 @@ apply_theme()
 df = load_merged()
 
 if df is None:
-    st.error("❌ Dataset could not be loaded.")
+    st.error("Dataset could not be loaded.")
     st.stop()
 
 for col in ["is_delay","weather_delay","temperature_c","humidity_pct","precipitation_mm","wind_speed_kmh"]:
@@ -42,8 +42,8 @@ st.divider()
 
 # ── Tabs ───────────────────────────────────────────────────────────────────────
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "🥧 Cause Breakdown", "📊 Sensor Distributions",
-    "📉 Avg Conditions", "🔥 Correlations", "📆 Monthly Trend"
+    "Cause Breakdown", "Sensor Distributions",
+    "Avg Conditions", "Correlations", "Monthly Trend"
 ])
 
 # ────────────── TAB 1 ──────────────
